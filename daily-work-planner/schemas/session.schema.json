@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Daily Work Planner Session",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "state",
+    "goal",
+    "mode",
+    "start",
+    "hard_deadline",
+    "planned_minutes",
+    "events"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "id": { "type": "string" },
+    "state": {
+      "type": "string",
+      "enum": ["planned", "started", "checkpoint", "delayed", "rescheduled", "finished", "reviewed"]
+    },
+    "goal": { "type": "string" },
+    "mode": { "type": "string" },
+    "start": { "type": "string" },
+    "hard_deadline": { "type": "string" },
+    "planned_minutes": { "type": "integer", "minimum": 1 },
+    "files": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "adaptive_buffer": {
+      "type": "object",
+      "properties": {
+        "extra_percent": { "type": "number" },
+        "reason": { "type": "string" }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["at", "state"],
+        "properties": {
+          "at": { "type": "string" },
+          "state": { "type": "string" },
+          "note": { "type": "string" },
+          "data": { "type": "object" }
+        }
+      }
+    },
+    "review": {
+      "type": "object"
+    }
+  }
+}
