@@ -23,6 +23,43 @@ Planning should accelerate execution. Daily Work Planner limits the planning ste
 
 If the budget is small, the skill creates a minimal plan instead of asking many questions.
 
+## Quick Start Case
+
+Suppose you are about to prepare a 5-minute paper-sharing talk and only know the current tasks:
+
+```text
+Read two paper abstracts
+Draft a 6-slide outline
+Create a 5-minute talk checklist
+```
+
+Run the planner without giving a duration:
+
+```powershell
+python -m daily_work_planner start --goal "Prepare a 5-minute paper-sharing talk from two papers" --start 09:00 --window-note "Read two paper abstracts`nDraft a 6-slide outline`nCreate a 5-minute talk checklist" --speed normal --output-dir .\work-session
+```
+
+Daily Work Planner turns that into a concrete session:
+
+| Decision | Result |
+|---|---|
+| Detected tasks | 3 current-window tasks |
+| Estimated duration | 190 min |
+| Feasibility | 77/100, high, complete scope |
+| Soft / hard deadline | 11:42 / 12:10 |
+| Buffer | 28 min |
+| First action | Scan source material |
+
+During the session:
+
+```powershell
+python -m daily_work_planner checkpoint --session .\work-session\session.json --now 10:15 --done "Read two paper abstracts" --remaining "Draft a 6-slide outline" --remaining "Create a 5-minute talk checklist"
+```
+
+The checkpoint reports a light delay and tells the user to compress buffer while keeping the core target. Later, `resume` tells the user to continue with the slide outline, and `handoff --remember` records the final planned-vs-actual timing for future estimates.
+
+See the full walkthrough: [examples/quick-start-case.md](examples/quick-start-case.md).
+
 ## Use Cases
 
 - Reading PDFs, papers, textbooks, or technical documents
