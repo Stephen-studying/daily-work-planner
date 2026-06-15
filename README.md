@@ -34,6 +34,9 @@ If the budget is small, the skill creates a minimal plan instead of asking many 
 - Organizing data, spreadsheets, images, references, or folders
 - Deciding which files matter when there are too many inputs
 - Defining a minimum deliverable when time is limited
+- Inspecting current/local open tasks before a session starts
+- Estimating required time when the user did not provide a duration
+- Recording local task memory and personal timing habits after completion
 
 ## What It Produces
 
@@ -60,6 +63,14 @@ Depending on task length and uncertainty, the skill can produce:
 - Durable `session.json` state machine
 - Adaptive buffer from review-log history
 - Consolidated `work_session.txt` and `work_session.docx` reports
+- Current-window task intake through `--window-note`
+- Local repository task inspection from git status, TODO/FIXME markers, and Markdown checkboxes
+- Missing-duration estimation from goal, files, detected tasks, speed profile, review logs, and local memory
+- Feasibility scoring with complete, deliverable, and minimum scope options
+- Execution checkpoints with delay severity
+- Resume cards for unfinished sessions
+- End-of-session handoff summaries
+- Private local memory in `.daily-work-planner/`
 
 ## Repository Structure
 
@@ -67,6 +78,8 @@ Depending on task length and uncertainty, the skill can produce:
 daily-work-planner/
   README.md
   README.zh-CN.md
+  install.ps1
+  install.sh
   LICENSE
   .gitignore
   pyproject.toml
@@ -80,6 +93,8 @@ daily-work-planner/
       openai.yaml
     scripts/
       plan_day.py
+      inspect_tasks.py
+      feasibility_score.py
       extract_file_context.py
       classify_work_mode.py
       rank_files.py
@@ -90,8 +105,12 @@ daily-work-planner/
       make_ics.py
       update_review_log.py
       reschedule_session.py
+      checkpoint_session.py
+      resume_session.py
+      handoff_session.py
       estimate_profile.py
       session_state.py
+      task_memory.py
     schemas/
       session.schema.json
     references/
@@ -99,6 +118,7 @@ daily-work-planner/
       work_modes.md
       reschedule_rules.md
       privacy_rules.md
+      memory_rules.md
     assets/
       daily_plan_template.md
       review_log_template.md
@@ -111,13 +131,62 @@ The inner `daily-work-planner/` folder is the actual Codex Skill folder. The out
 
 ## Installation
 
-Copy or clone the inner skill folder into your Codex skills directory:
+### Option 1: Ask Codex To Install From GitHub
 
-```powershell
-Copy-Item -Recurse .\daily-work-planner "$env:USERPROFILE\.codex\skills\"
+In Codex, ask:
+
+```text
+Install this skill: https://github.com/Stephen-studying/daily-work-planner/tree/main/daily-work-planner
 ```
 
-Restart Codex so the skill can be discovered.
+Restart Codex after installation.
+
+### Option 2: Clone And Install Locally
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/Stephen-studying/daily-work-planner.git
+cd daily-work-planner
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Force
+```
+
+macOS / Linux:
+
+```bash
+git clone https://github.com/Stephen-studying/daily-work-planner.git
+cd daily-work-planner
+sh ./install.sh --force
+```
+
+The installer copies the inner skill folder to:
+
+- Windows default: `%USERPROFILE%\.codex\skills\daily-work-planner`
+- macOS/Linux default: `~/.codex/skills/daily-work-planner`
+- If `CODEX_HOME` is set: `$CODEX_HOME/skills/daily-work-planner`
+
+### Verify Installation
+
+Windows PowerShell:
+
+```powershell
+Test-Path "$env:USERPROFILE\.codex\skills\daily-work-planner\SKILL.md"
+```
+
+Then restart Codex and try:
+
+```text
+Use $daily-work-planner to plan my next 2-hour work session.
+```
+
+### Optional CLI Setup
+
+From the cloned repository, you can also install the helper CLI in editable mode:
+
+```powershell
+python -m pip install -e .
+python -m daily_work_planner --help
+```
 
 ## Example Prompt
 
@@ -139,6 +208,25 @@ python -m daily_work_planner start --goal "Read two papers and draft an outline"
 python -m daily_work_planner session status --session .\work-session\session.json
 ```
 
+Inspect open tasks and estimate required time:
+
+```powershell
+python -m daily_work_planner inspect --repo . --goal "Finish the current repo cleanup" --speed normal
+python -m daily_work_planner inspect --window-note "Fix login bug`nUpdate README`nRun tests" --goal "Finish current coding task"
+```
+
+Start a session without providing `--minutes`; the planner estimates the duration:
+
+```powershell
+python -m daily_work_planner start --goal "Finish current coding task" --start 09:00 --scan-repo --repo . --speed normal --output-dir .\work-session
+```
+
+Score feasibility before committing to a time box:
+
+```powershell
+python -m daily_work_planner feasibility --goal "Finish the final report" --available-minutes 90 --estimated-minutes 150 --mode writing
+```
+
 The default `start` package writes:
 
 - `work_session.txt`
@@ -153,6 +241,32 @@ Use review history to adapt buffer:
 ```powershell
 python -m daily_work_planner start --goal "Build final deck" --start 09:00 --minutes 180 --hard-deadline 12:00 --profile-log .\review-log.md --output-dir .\work-session
 ```
+
+Record a checkpoint during execution:
+
+```powershell
+python -m daily_work_planner checkpoint --session .\work-session\session.json --now 10:30 --done "Updated README" --remaining "Run tests" --remaining "Commit changes"
+```
+
+Resume a previous unfinished session:
+
+```powershell
+python -m daily_work_planner resume --session .\work-session\session.json
+```
+
+Create an end-of-session handoff:
+
+```powershell
+python -m daily_work_planner handoff --session .\work-session\session.json --completed "Updated task inspection" --remaining "Publish v1.2 tag" --actual-minutes 145 --remember
+```
+
+Record local task memory after finishing:
+
+```powershell
+python -m daily_work_planner remember --session .\work-session\session.json --actual-minutes 145 --completed "Generated consolidated session report" --habit "Coding cleanup usually needs an extra test pass"
+```
+
+By default this writes `.daily-work-planner/memory.jsonl` and `.daily-work-planner/MEMORY.md`. The folder is ignored by Git because it may contain personal work habits.
 
 Extract lightweight context from local files:
 

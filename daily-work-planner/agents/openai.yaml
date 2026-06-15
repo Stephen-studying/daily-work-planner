@@ -1,7 +1,7 @@
 interface:
   display_name: "Daily Work Planner"
-  short_description: "Plan focused work sessions before execution."
-  default_prompt: "Use $daily-work-planner to turn my available time, files, deadline, and goal into an executable work-session plan."
+  short_description: "Plan, checkpoint, resume, and remember work."
+  default_prompt: "Use $daily-work-planner to inspect my current task or repo, estimate time, score feasibility, and create an executable work-session plan."
 
 policy:
   allow_implicit_invocation: true

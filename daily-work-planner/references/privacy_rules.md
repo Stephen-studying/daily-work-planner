@@ -9,6 +9,7 @@ Use local-first handling by default.
 - Do not store private documents in review logs.
 - Record task state, timing, and process lessons instead of source content.
 - Prefer summaries of file roles over full file contents.
+- Keep `.daily-work-planner/` local by default because it can contain personal timing habits and task history.
 
 ## Sensitive Inputs
 
@@ -43,3 +44,15 @@ Review logs should not contain:
 - Full source code
 - Confidential datasets
 - Unredacted personal information
+
+## Local Memory
+
+Local memory may contain:
+
+- Goal summaries
+- Planned and actual minutes
+- Completion summaries
+- File names or file roles
+- Habit notes that improve future estimates
+
+Local memory should not contain full current-window text, private document content, source code blocks, credentials, or confidential data.

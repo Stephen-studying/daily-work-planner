@@ -40,6 +40,15 @@
         "reason": { "type": "string" }
       }
     },
+    "estimation": {
+      "type": "object"
+    },
+    "task_inspection": {
+      "type": "object"
+    },
+    "feasibility": {
+      "type": "object"
+    },
     "events": {
       "type": "array",
       "items": {

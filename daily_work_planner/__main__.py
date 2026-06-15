@@ -21,6 +21,12 @@ COMMANDS = {
     "reschedule": "reschedule_session.py",
     "profile": "estimate_profile.py",
     "session": "session_state.py",
+    "inspect": "inspect_tasks.py",
+    "remember": "task_memory.py",
+    "feasibility": "feasibility_score.py",
+    "checkpoint": "checkpoint_session.py",
+    "resume": "resume_session.py",
+    "handoff": "handoff_session.py",
 }
 
 

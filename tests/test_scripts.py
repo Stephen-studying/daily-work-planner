@@ -12,15 +12,21 @@ SCRIPTS = ROOT / "daily-work-planner" / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from classify_work_mode import classify_work_mode
+from checkpoint_session import evaluate_checkpoint
 from estimate_profile import build_profile
+from feasibility_score import assess_feasibility
 from extract_file_context import extract_context
+from handoff_session import create_handoff
+from inspect_tasks import estimate_goal_minutes, inspect_tasks
 from make_ics import build_ics
 from make_todo import parse_milestones, render_todo
 from plan_day import PlanConfig, generate_plan, parse_time
 from rank_files import rank_files
 from report_writer import write_docx
-from session_state import create_session, transition
+from resume_session import build_resume_card
+from session_state import create_session, save_session, transition
 from start_session import adaptive_buffer_from_logs
+from task_memory import load_entries, remember, build_entry
 from validate_plan import validate_plan
 
 
@@ -151,6 +157,112 @@ class DailyWorkPlannerScriptTests(unittest.TestCase):
             write_docx(path, "# Title\n\nBody text", "Test Report")
             self.assertTrue(path.exists())
             self.assertGreater(path.stat().st_size, 500)
+
+    def test_inspect_tasks_finds_markers_and_estimates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "tasks.md"
+            path.write_text("- [ ] Update README\n\nTODO: run tests\n", encoding="utf-8")
+            result = inspect_tasks(repo=root, goal="Finish repo cleanup", speed="normal", memory_dir=root / ".memory")
+            self.assertGreaterEqual(len(result.tasks), 2)
+            self.assertGreater(result.estimated_total_minutes, 0)
+
+    def test_estimate_goal_minutes_uses_speed(self) -> None:
+        fast = estimate_goal_minutes("Fix bug and run tests", mode="code", speed="fast")
+        slow = estimate_goal_minutes("Fix bug and run tests", mode="code", speed="slow")
+        self.assertLess(fast, slow)
+
+    def test_task_memory_writes_private_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            memory_dir = Path(tmp) / ".daily-work-planner"
+            entry = build_entry(
+                goal="Finish coding task",
+                mode="code",
+                completed=["Implemented task inspection"],
+                planned_minutes=100,
+                actual_minutes=130,
+                habit=["Code tasks need extra verification"],
+            )
+            _, markdown = remember(memory_dir, entry)
+            self.assertTrue(markdown.exists())
+            entries = load_entries(memory_dir)
+            self.assertEqual(entries[0]["speed_signal"], "slower-than-plan")
+
+    def test_feasibility_recommends_minimum_when_time_is_short(self) -> None:
+        result = assess_feasibility(
+            goal="Finish final report",
+            available_minutes=70,
+            estimated_minutes=140,
+            mode="writing",
+        )
+        self.assertEqual(result.recommended_scope, "minimum")
+        self.assertEqual(result.level, "low")
+
+    def test_checkpoint_detects_delay(self) -> None:
+        session = create_session(
+            goal="Finish cleanup",
+            mode="code",
+            start="09:00",
+            hard_deadline="11:00",
+            planned_minutes=120,
+            files=[],
+        )
+        result = evaluate_checkpoint(
+            session,
+            now="10:00",
+            done=["README"],
+            remaining=["tests", "commit", "docs"],
+        )
+        self.assertEqual(result.state, "delayed")
+        self.assertEqual(result.delay_level, "moderate")
+
+    def test_resume_card_uses_latest_checkpoint(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "session.json"
+            session = create_session(
+                goal="Finish cleanup",
+                mode="code",
+                start="09:00",
+                hard_deadline="11:00",
+                planned_minutes=120,
+                files=[],
+            )
+            checkpointed = transition(
+                session,
+                "checkpoint",
+                "Checkpoint recorded.",
+                {"done": ["README"], "remaining": ["tests"], "actual_progress": 0.5},
+            )
+            save_session(path, checkpointed)
+            card = build_resume_card(path, Path(tmp) / ".memory")
+            self.assertEqual(card.remaining, ["tests"])
+            self.assertIn("tests", card.next_action)
+
+    def test_handoff_writes_file_and_memory(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            session_path = Path(tmp) / "session.json"
+            memory_dir = Path(tmp) / ".daily-work-planner"
+            session = create_session(
+                goal="Finish cleanup",
+                mode="code",
+                start="09:00",
+                hard_deadline="11:00",
+                planned_minutes=120,
+                files=[],
+            )
+            save_session(session_path, session)
+            output = create_handoff(
+                session_path,
+                completed=["Implemented handoff"],
+                remaining=["Publish tag"],
+                actual_minutes=130,
+                output=Path(tmp) / "handoff.md",
+                write_memory=True,
+                memory_dir=memory_dir,
+                habits=["Release work needs final verification"],
+            )
+            self.assertTrue(output.exists())
+            self.assertTrue((memory_dir / "MEMORY.md").exists())
 
 
 if __name__ == "__main__":

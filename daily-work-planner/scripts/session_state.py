@@ -36,6 +36,9 @@ def create_session(
     files: list[str],
     outputs: dict[str, str] | None = None,
     adaptive_buffer: dict | None = None,
+    estimation: dict | None = None,
+    task_inspection: dict | None = None,
+    feasibility: dict | None = None,
 ) -> dict:
     timestamp = now_iso()
     return {
@@ -52,6 +55,9 @@ def create_session(
         "files": files,
         "outputs": outputs or {},
         "adaptive_buffer": adaptive_buffer or {"extra_percent": 0, "reason": "none"},
+        "estimation": estimation or {},
+        "task_inspection": task_inspection or {},
+        "feasibility": feasibility or {},
         "events": [
             {
                 "at": timestamp,
