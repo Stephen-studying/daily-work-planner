@@ -5,6 +5,9 @@ Thumbs.db
 outputs/
 logs/
 work-session/
+tmp-agent-install/
+agent-skills/
+.agent-skills/
 *.ics
 review-log.md
 .daily-work-planner/

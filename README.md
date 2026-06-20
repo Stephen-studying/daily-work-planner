@@ -6,11 +6,12 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Codex Skill](https://img.shields.io/badge/Codex-Skill-111827?style=for-the-badge)
+![Agent Portable](https://img.shields.io/badge/Agent-Portable-DB2777?style=for-the-badge)
 ![Local First](https://img.shields.io/badge/Local--First-Privacy-0F766E?style=for-the-badge)
 ![Version](https://img.shields.io/badge/version-1.2.0-7C3AED?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-2563EB?style=for-the-badge)
 
-**A work-session preflight system for Codex.**
+**A portable work-session preflight system for Codex and other local agents.**
 
 Turn scattered files, vague tasks, current-window notes, repo TODOs, and deadlines into a focused work session with milestones, acceptance criteria, buffers, checkpoints, handoff notes, and local memory.
 
@@ -159,10 +160,24 @@ The plan itself can include:
 
 Use `--split-files` when you also want separate helper files such as `session_plan.md`, `file_context.md`, `file_priority.md`, `todo.txt`, and `plan_validation.md`.
 
+## Agent Compatibility
+
+This repository now has two agent entrypoints:
+
+| Agent type | Entrypoint | Notes |
+|---|---|---|
+| Codex / OpenAI-compatible skill loaders | `daily-work-planner/SKILL.md` | Uses the standard Codex skill frontmatter and `agents/openai.yaml`. |
+| Generic local agents | `daily-work-planner/AGENTS.md` | Contains the same workflow as portable agent instructions. |
+| Agents working from the whole repository | `AGENTS.md` | Points the agent to the installable skill folder and test commands. |
+| CLI-only use | `python -m daily_work_planner --help` | Works without a skill loader after Python package setup. |
+
+For agents that do not have a formal skill system, install this repository as a portable folder and point the agent to `daily-work-planner/AGENTS.md`. If the agent supports local tools, allow it to run Python scripts from `daily-work-planner/scripts/`.
+
 ## Repository Structure
 
 ```text
 daily-work-planner/
+  AGENTS.md
   README.md
   README.zh-CN.md
   install.ps1
@@ -175,6 +190,7 @@ daily-work-planner/
       tests.yml
   examples/
   daily-work-planner/
+    AGENTS.md
     SKILL.md
     agents/
       openai.yaml
@@ -214,7 +230,7 @@ daily-work-planner/
   tests/
 ```
 
-The inner `daily-work-planner/` folder is the actual Codex Skill folder. The outer repository contains documentation and examples for GitHub.
+The inner `daily-work-planner/` folder is the installable skill folder. Codex reads `SKILL.md`; generic agents can read `AGENTS.md`. The outer repository contains documentation, examples, installers, tests, and the CLI wrapper.
 
 ## Installation
 
@@ -228,14 +244,14 @@ Install this skill: https://github.com/Stephen-studying/daily-work-planner/tree/
 
 Restart Codex after installation.
 
-### Option 2: Clone And Install Locally
+### Option 2: Clone And Install For Codex
 
 Windows PowerShell:
 
 ```powershell
 git clone https://github.com/Stephen-studying/daily-work-planner.git
 cd daily-work-planner
-powershell -ExecutionPolicy Bypass -File .\install.ps1 -Force
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Agent codex -Force
 ```
 
 macOS / Linux:
@@ -243,7 +259,7 @@ macOS / Linux:
 ```bash
 git clone https://github.com/Stephen-studying/daily-work-planner.git
 cd daily-work-planner
-sh ./install.sh --force
+sh ./install.sh --agent codex --force
 ```
 
 The installer copies the inner skill folder to:
@@ -251,6 +267,31 @@ The installer copies the inner skill folder to:
 - Windows default: `%USERPROFILE%\.codex\skills\daily-work-planner`
 - macOS/Linux default: `~/.codex/skills/daily-work-planner`
 - If `CODEX_HOME` is set: `$CODEX_HOME/skills/daily-work-planner`
+
+### Option 3: Install For Another Agent
+
+Use `generic` mode when your agent has its own skill folder or instruction-library folder.
+
+Windows PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Agent generic -Destination "$env:USERPROFILE\.agent-skills" -Force
+```
+
+macOS / Linux:
+
+```bash
+sh ./install.sh --agent generic --dest "$HOME/.agent-skills" --force
+```
+
+Then configure your agent to read one of these files:
+
+| File | Use it when |
+|---|---|
+| `.agent-skills/daily-work-planner/AGENTS.md` | The agent supports generic instruction files. |
+| `.agent-skills/daily-work-planner/SKILL.md` | The agent understands OpenAI/Codex-style skills. |
+
+You can also set `AGENT_SKILLS_HOME` and omit `-Destination` / `--dest`.
 
 ### Verify Installation
 

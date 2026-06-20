@@ -6,11 +6,12 @@
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Codex Skill](https://img.shields.io/badge/Codex-Skill-111827?style=for-the-badge)
+![Agent Portable](https://img.shields.io/badge/Agent-Portable-DB2777?style=for-the-badge)
 ![Local First](https://img.shields.io/badge/Local--First-Privacy-0F766E?style=for-the-badge)
 ![Version](https://img.shields.io/badge/version-1.2.0-7C3AED?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-2563EB?style=for-the-badge)
 
-**一个面向 Codex 的工作会话预检系统。**
+**一个可安装到 Codex 和其他本地 agent 的工作会话预检系统。**
 
 把零散文件、模糊任务、当前窗口备注、本地仓库 TODO 和 deadline，转化成可执行的工作会话计划：里程碑、验收标准、buffer、checkpoint、交接记录和本地记忆一次生成。
 
@@ -160,6 +161,19 @@ flowchart LR
 | handoff | 结束时生成交接包，并可选写入本地记忆。 |
 | 本地任务记忆 | 记录完成内容、实际用时和个人习惯，帮助后续估时更准。 |
 
+## Agent 兼容性
+
+这个仓库现在提供两个 agent 入口：
+
+| Agent 类型 | 入口文件 | 说明 |
+|---|---|---|
+| Codex / OpenAI 兼容 skill loader | `daily-work-planner/SKILL.md` | 使用标准 Codex skill frontmatter 和 `agents/openai.yaml`。 |
+| 通用本地 agent | `daily-work-planner/AGENTS.md` | 把同一套工作流写成通用 agent 指令。 |
+| 从整个仓库读取指令的 agent | `AGENTS.md` | 指向真正可安装的 skill 文件夹和测试命令。 |
+| 只使用命令行 | `python -m daily_work_planner --help` | 不需要 skill loader，安装 Python 包后即可使用。 |
+
+如果某个 agent 没有正式的 skill 系统，可以把内层 `daily-work-planner/` 当作可移植指令包，让 agent 读取 `daily-work-planner/AGENTS.md`。如果 agent 支持本地工具调用，可以允许它运行 `daily-work-planner/scripts/` 下的 Python 脚本。
+
 ## 统一 CLI
 
 ```powershell
@@ -178,14 +192,14 @@ python -m daily_work_planner --help
 
 安装后重启 Codex。
 
-### 方式 2：克隆仓库后本地安装
+### 方式 2：克隆仓库后安装到 Codex
 
 Windows PowerShell：
 
 ```powershell
 git clone https://github.com/Stephen-studying/daily-work-planner.git
 cd daily-work-planner
-powershell -ExecutionPolicy Bypass -File .\install.ps1 -Force
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Agent codex -Force
 ```
 
 macOS / Linux：
@@ -193,7 +207,7 @@ macOS / Linux：
 ```bash
 git clone https://github.com/Stephen-studying/daily-work-planner.git
 cd daily-work-planner
-sh ./install.sh --force
+sh ./install.sh --agent codex --force
 ```
 
 安装脚本会把内层 Skill 文件夹复制到：
@@ -201,6 +215,31 @@ sh ./install.sh --force
 - Windows 默认：`%USERPROFILE%\.codex\skills\daily-work-planner`
 - macOS/Linux 默认：`~/.codex/skills/daily-work-planner`
 - 如果设置了 `CODEX_HOME`：`$CODEX_HOME/skills/daily-work-planner`
+
+### 方式 3：安装到其他 agent
+
+当你的 agent 有自己的 skill 目录或指令库目录时，使用 `generic` 模式：
+
+Windows PowerShell：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -Agent generic -Destination "$env:USERPROFILE\.agent-skills" -Force
+```
+
+macOS / Linux：
+
+```bash
+sh ./install.sh --agent generic --dest "$HOME/.agent-skills" --force
+```
+
+然后让你的 agent 读取下面其中一个入口：
+
+| 文件 | 适用情况 |
+|---|---|
+| `.agent-skills/daily-work-planner/AGENTS.md` | agent 支持通用指令文件。 |
+| `.agent-skills/daily-work-planner/SKILL.md` | agent 能理解 OpenAI/Codex 风格 skill。 |
+
+也可以设置 `AGENT_SKILLS_HOME`，这样就不用每次传 `-Destination` / `--dest`。
 
 Windows 下可以这样验证：
 

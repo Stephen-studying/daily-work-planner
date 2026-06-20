@@ -1,11 +1,16 @@
 #!/usr/bin/env sh
 set -eu
 
-destination="${CODEX_HOME:-"$HOME/.codex"}/skills"
+agent="codex"
+destination=""
 force=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --agent)
+      agent="$2"
+      shift 2
+      ;;
     --dest)
       destination="$2"
       shift 2
@@ -15,7 +20,7 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     -h|--help)
-      echo "Usage: sh install.sh [--dest PATH] [--force]"
+      echo "Usage: sh install.sh [--agent codex|generic] [--dest PATH] [--force]"
       exit 0
       ;;
     *)
@@ -24,6 +29,23 @@ while [ "$#" -gt 0 ]; do
       ;;
   esac
 done
+
+case "$agent" in
+  codex|generic)
+    ;;
+  *)
+    echo "Unknown agent: $agent. Expected codex or generic." >&2
+    exit 2
+    ;;
+esac
+
+if [ -z "$destination" ]; then
+  if [ "$agent" = "codex" ]; then
+    destination="${CODEX_HOME:-$HOME/.codex}/skills"
+  else
+    destination="${AGENT_SKILLS_HOME:-$HOME/.agent-skills}"
+  fi
+fi
 
 repo_root="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 source_dir="$repo_root/daily-work-planner"
@@ -55,7 +77,16 @@ fi
 
 cp -R "$source_dir" "$target"
 
-echo "Installed Daily Work Planner skill to:"
+echo "Installed Daily Work Planner skill for '$agent' to:"
 echo "$target"
 echo ""
-echo 'Restart Codex, then use: Use $daily-work-planner to plan my work session.'
+if [ "$agent" = "codex" ]; then
+  echo 'Restart Codex, then use: Use $daily-work-planner to plan my work session.'
+else
+  echo "Point your agent at one of these entrypoints:"
+  echo "  - $target/AGENTS.md  (generic agent instructions)"
+  echo "  - $target/SKILL.md   (OpenAI/Codex skill format)"
+  echo ""
+  echo "If your agent supports local tools, allow Python to run scripts from:"
+  echo "  $target/scripts"
+fi

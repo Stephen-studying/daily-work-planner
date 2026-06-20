@@ -1,5 +1,7 @@
 [CmdletBinding()]
 param(
+    [ValidateSet("codex", "generic")]
+    [string]$Agent = "codex",
     [string]$Destination,
     [switch]$Force
 )
@@ -7,11 +9,19 @@ param(
 $ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrWhiteSpace($Destination)) {
-    $codexHome = $env:CODEX_HOME
-    if ([string]::IsNullOrWhiteSpace($codexHome)) {
-        $codexHome = Join-Path $env:USERPROFILE ".codex"
+    if ($Agent -eq "codex") {
+        $codexHome = $env:CODEX_HOME
+        if ([string]::IsNullOrWhiteSpace($codexHome)) {
+            $codexHome = Join-Path $env:USERPROFILE ".codex"
+        }
+        $Destination = Join-Path $codexHome "skills"
+    } else {
+        $agentHome = $env:AGENT_SKILLS_HOME
+        if ([string]::IsNullOrWhiteSpace($agentHome)) {
+            $agentHome = Join-Path $env:USERPROFILE ".agent-skills"
+        }
+        $Destination = $agentHome
     }
-    $Destination = Join-Path $codexHome "skills"
 }
 
 $repoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -39,7 +49,16 @@ if (Test-Path -LiteralPath $target) {
 
 Copy-Item -LiteralPath $source -Destination $resolvedDestination -Recurse -Force
 
-Write-Host "Installed Daily Work Planner skill to:"
+Write-Host "Installed Daily Work Planner skill for '$Agent' to:"
 Write-Host $target
 Write-Host ""
-Write-Host "Restart Codex, then use: Use `$daily-work-planner to plan my work session."
+if ($Agent -eq "codex") {
+    Write-Host "Restart Codex, then use: Use `$daily-work-planner to plan my work session."
+} else {
+    Write-Host "Point your agent at one of these entrypoints:"
+    Write-Host "  - $target\AGENTS.md  (generic agent instructions)"
+    Write-Host "  - $target\SKILL.md   (OpenAI/Codex skill format)"
+    Write-Host ""
+    Write-Host "If your agent supports local tools, allow Python to run scripts from:"
+    Write-Host "  $target\scripts"
+}

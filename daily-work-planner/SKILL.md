@@ -5,6 +5,8 @@ description: Plan a focused work session before execution begins, inspect curren
 
 # Daily Work Planner
 
+This is the Codex/OpenAI skill entrypoint. For agents that read generic instruction files instead of `SKILL.md`, use `AGENTS.md` in this same folder.
+
 ## Core Rule
 
 Optimize for execution, not planning. Convert uncertainty into a usable first plan quickly, then use checkpoints to correct the plan during work.
