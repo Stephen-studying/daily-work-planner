@@ -1,18 +1,38 @@
 # Daily Work Planner
 
+<div align="center">
+
 [简体中文](README.zh-CN.md) | English
 
-Daily Work Planner is a Codex Skill for work-session preflight planning. It turns a messy goal, available time, source files, and deadlines into an executable work-session plan before the user starts working.
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Codex Skill](https://img.shields.io/badge/Codex-Skill-111827?style=for-the-badge)
+![Local First](https://img.shields.io/badge/Local--First-Privacy-0F766E?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.2.0-7C3AED?style=for-the-badge)
+![License](https://img.shields.io/badge/license-MIT-2563EB?style=for-the-badge)
 
-It is not a calendar replacement and it is not a generic daily todo generator. Its purpose is to help a user answer three questions quickly:
+**A work-session preflight system for Codex.**
 
-1. What should I do first?
-2. What counts as done at each milestone?
-3. What should I protect if time runs out?
+Turn scattered files, vague tasks, current-window notes, repo TODOs, and deadlines into a focused work session with milestones, acceptance criteria, buffers, checkpoints, handoff notes, and local memory.
 
-## Core Idea
+</div>
 
-Planning should accelerate execution. Daily Work Planner limits the planning step to at most 5% of the available work time, with an absolute cap:
+## Why This Exists
+
+Most work does not start cleanly. You may know that you need to read papers, revise a Word document, finish a report, debug code, prepare slides, or clean up a repository, but not know what to do first, how long it will take, or what to protect if time runs out.
+
+Daily Work Planner is built for that exact moment before execution begins.
+
+It is not a calendar app and it is not a generic daily todo list. It answers three practical questions:
+
+| Question | Planner answer |
+|---|---|
+| What should I do first? | A first action based on the goal, files, current tasks, and available time. |
+| What counts as done? | Milestones with acceptance criteria, not vague steps like "continue working". |
+| What if time is not enough? | A minimum deliverable, fallback scope, buffer, and checkpoint response. |
+
+## Core Rule
+
+Planning should accelerate execution. Daily Work Planner limits the planning step to at most 5% of the available work time, with a hard cap:
 
 | Total work time | Planning cap |
 |---|---:|
@@ -39,7 +59,7 @@ Run the planner without giving a duration:
 python -m daily_work_planner start --goal "Prepare a 5-minute paper-sharing talk from two papers" --start 09:00 --window-note "Read two paper abstracts`nDraft a 6-slide outline`nCreate a 5-minute talk checklist" --speed normal --output-dir .\work-session
 ```
 
-Daily Work Planner turns that into a concrete session:
+Daily Work Planner estimates the session and turns that into a concrete plan:
 
 | Decision | Result |
 |---|---|
@@ -56,58 +76,88 @@ During the session:
 python -m daily_work_planner checkpoint --session .\work-session\session.json --now 10:15 --done "Read two paper abstracts" --remaining "Draft a 6-slide outline" --remaining "Create a 5-minute talk checklist"
 ```
 
-The checkpoint reports a light delay and tells the user to compress buffer while keeping the core target. Later, `resume` tells the user to continue with the slide outline, and `handoff --remember` records the final planned-vs-actual timing for future estimates.
+The checkpoint reports whether the delay is light, medium, or severe, then recommends whether to compress buffer, drop optional scope, or switch to the minimum deliverable. Later, `resume` tells the user where to continue, and `handoff --remember` records planned-vs-actual timing for future estimates.
 
 See the full walkthrough: [examples/quick-start-case.md](examples/quick-start-case.md).
 
+## How It Works
+
+```mermaid
+flowchart LR
+    A["Goal, files, repo tasks, window notes"] --> B["Task inspection"]
+    B --> C["Duration estimate"]
+    C --> D["Feasibility score"]
+    D --> E["Session plan"]
+    E --> F["Checkpoint"]
+    F --> G["Resume or reschedule"]
+    G --> H["Handoff"]
+    H --> I["Local memory"]
+```
+
+## Feature Map
+
+| Phase | What it can do |
+|---|---|
+| Intake | Accept goals, files, deadlines, current-window notes, local repo state, review logs, and local memory. |
+| Inspection | Extract lightweight context from PDF, DOCX, Markdown, text, and code files. |
+| Task triage | Detect open work from `git status`, TODO/FIXME markers, Markdown checkboxes, and pasted task notes. |
+| Estimation | Estimate missing duration from task type, files, speed profile, detected work, review history, and memory. |
+| Planning | Create soft/hard deadlines, milestone tables, acceptance criteria, buffer, and minimum deliverable scope. |
+| Validation | Check that the plan has deadlines, milestones, acceptance criteria, buffer, fallback, and budget compliance. |
+| Execution | Record checkpoints, classify delay severity, reschedule remaining work, and generate resume cards. |
+| Finish | Create handoff summaries, planned-vs-actual review logs, and private local task memory. |
+
+## Work Modes
+
+| Mode | Typical output |
+|---|---|
+| Deep writing | Section structure, argument milestones, citation gaps, revision acceptance criteria. |
+| Fast reading | Must-read sections, skim/skip boundaries, structured notes, next-use summary. |
+| Code development | Minimum runnable version, changed files, tests, debugging order, risk checkpoints. |
+| Document revision | Main document, format rules, references, figures, export checklist. |
+| PPT production | Slide count, story flow, figure priority, speaker-note checkpoint, minimum deck. |
+| Exam review | Topic priority, weak points, recall checks, problem practice, last-hour fallback. |
+| Data organization | Source files, table structure, naming, chart outputs, anomaly checks. |
+| Research planning | Source triage, reading path, synthesis output, evidence map. |
+| Admin paperwork | Required fields, attachments, submission checklist, deadline buffer. |
+| Repository cleanup | Dirty files, TODOs, tests, commit-ready scope, handoff state. |
+
 ## Use Cases
 
-- Reading PDFs, papers, textbooks, or technical documents
-- Revising Word documents, reports, manuscripts, or application materials
-- Preparing papers, presentations, defenses, or project summaries
-- Developing, debugging, or refactoring code
-- Reviewing for exams
-- Producing slides and speaker notes
-- Organizing data, spreadsheets, images, references, or folders
-- Deciding which files matter when there are too many inputs
-- Defining a minimum deliverable when time is limited
-- Inspecting current/local open tasks before a session starts
-- Estimating required time when the user did not provide a duration
-- Recording local task memory and personal timing habits after completion
+| Scenario | Why it helps |
+|---|---|
+| Reading PDFs, papers, textbooks, or technical documents | Prioritizes what to read first and turns reading into structured notes. |
+| Revising Word documents, reports, manuscripts, or applications | Separates content work, formatting work, final checks, and submission buffer. |
+| Preparing presentations, defenses, or project summaries | Converts loose material into slide milestones and a minimum usable deck. |
+| Developing, debugging, or refactoring code | Defines a minimum runnable version, test checkpoints, and commit-ready scope. |
+| Reviewing for exams | Prioritizes high-frequency topics, weak points, recall checks, and last-hour fallback. |
+| Organizing data, spreadsheets, images, references, or folders | Creates a traceable cleanup plan with naming, table, and output checks. |
+| Cleaning up a local repository | Inspects dirty files, TODO/FIXME markers, Markdown checkboxes, and unfinished work. |
 
-## What It Produces
+## Output Package
 
-Depending on task length and uncertainty, the skill can produce:
+By default, one `start` command writes a compact package:
 
-- Planning budget
-- Soft deadline and hard deadline
-- File priority
-- Milestone table
-- Acceptance criteria
-- Buffer time
-- Checkpoint delay response
-- Minimum deliverable version
-- Todo list
-- Optional `.ics` calendar event with reminder alarm
-- Review log entry
-- Lightweight context extracted from local PDF, DOCX, Markdown, text, and code files
-- Automatic work-mode classification
-- File priority ranking
-- Plan validation
-- One-command work-session package generation
-- Checkpoint rescheduling
-- Personal estimation profile from review logs
-- Durable `session.json` state machine
-- Adaptive buffer from review-log history
-- Consolidated `work_session.txt` and `work_session.docx` reports
-- Current-window task intake through `--window-note`
-- Local repository task inspection from git status, TODO/FIXME markers, and Markdown checkboxes
-- Missing-duration estimation from goal, files, detected tasks, speed profile, review logs, and local memory
-- Feasibility scoring with complete, deliverable, and minimum scope options
-- Execution checkpoints with delay severity
-- Resume cards for unfinished sessions
-- End-of-session handoff summaries
-- Private local memory in `.daily-work-planner/`
+| File | Purpose |
+|---|---|
+| `work_session.txt` | Human-readable session plan with tasks, deadlines, milestones, and fallback scope. |
+| `work_session.docx` | Word version of the same plan for sharing, printing, or archiving. |
+| `session.ics` | Calendar event with reminder alarm. |
+| `session.json` | Durable state for checkpoint, resume, reschedule, handoff, and memory. |
+
+The plan itself can include:
+
+| Planning element | Included when useful |
+|---|---|
+| Planning budget | Keeps planning under the 5% rule. |
+| Soft and hard deadlines | Separates internal target time from final delivery time. |
+| File priority | Marks primary, reference, optional, and ignore-for-now files. |
+| Milestones | Adds acceptance criteria for each stage. |
+| Buffer and fallback | Protects the minimum deliverable when time slips. |
+| Checkpoint response | Classifies delay severity and compresses the plan if needed. |
+| Review and memory | Records planned-vs-actual time without storing sensitive source text. |
+
+Use `--split-files` when you also want separate helper files such as `session_plan.md`, `file_context.md`, `file_priority.md`, `todo.txt`, and `plan_validation.md`.
 
 ## Repository Structure
 
@@ -365,6 +415,23 @@ Build an estimation profile:
 ```powershell
 python .\daily-work-planner\scripts\estimate_profile.py .\review-log.md
 ```
+
+## Privacy Model
+
+Daily Work Planner is local-first by default:
+
+- It does not upload user files by itself.
+- It does not store full documents, papers, code, or current-window raw text in memory.
+- Local memory stores task type, mode, planned minutes, actual minutes, summary, filenames, and habit signals.
+- `.daily-work-planner/` is ignored by Git because it may contain personal working patterns.
+
+## Roadmap Ideas
+
+- Richer file readers for more office, research, and course-material formats.
+- Optional GUI wrapper for non-terminal users.
+- Better task-duration calibration from repeated sessions.
+- More work-mode templates for lab work, literature review, grant writing, and interview prep.
+- Export options for more task managers and calendar systems.
 
 ## Non-Goals
 
